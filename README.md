@@ -23,10 +23,33 @@
 
 > 素材為個人娛樂用途的同人二創,與《牛來》片方無關。
 
-## 🔗 專案連結
+## 📥 下載與安裝(Windows)
 
-- **GitHub**:https://github.com/Alan2Z/monster_deleter_electron(推薦,釋出產物在此下載)
-- **Gitee**:https://gitee.com/Alan-Zou/monster_deleter_electron(⚠️ 安裝包產物過大,無法上傳至 Gitee,請移步至 GitHub 下載)
+**下載頁**:[Releases](https://github.com/ivan9527945/NiuLaiDeleter/releases/latest)
+
+| 檔案 | 誰該下載 |
+|---|---|
+| `NiuLaiDeleter-Setup-x64.exe` | 一般 Windows PC(Intel／AMD)**← 絕大多數人** |
+| `NiuLaiDeleter-Setup-arm64.exe` | Windows on ARM(Snapdragon X、Surface Pro 11 等) |
+
+不確定自己是哪一種:設定 → 系統 → 系統資訊 → 看「系統類型」。
+
+### 安裝步驟
+
+1. **下載**對應架構的 `.exe`
+2. **過 SmartScreen** — 安裝檔未經數位簽章,Windows 會跳出藍色的「Windows 已保護您的電腦」,
+   而且預設只有「不要執行」一顆按鈕。請點左下角的「**其他資訊**」→「**仍要執行**」
+3. **跑安裝精靈** — 可自選安裝目錄,會建立桌面與開始選單捷徑「召喚牛來摧毀檔案」。
+   **不需要系統管理員權限**(每使用者安裝,登錄檔只寫 HKCU)
+4. **先啟動一次**(這步不能跳過)— 右鍵選單是在程式啟動時才寫進登錄檔的,
+   沒跑過就不會出現右鍵選單。雙擊桌面捷徑會開啟角色選擇視窗
+5. **在角色視窗選一次角色** — 右鍵選單的文字跟著預設角色跑,選過才會定下來
+6. **開始用** — 對任何檔案或資料夾按右鍵 → 「**召喚牛來摧毀**」
+
+### 解除安裝
+
+設定 → 應用程式 → 找「召喚牛來摧毀檔案」,或到安裝目錄執行 `Uninstall` 開頭的檔案。
+解除安裝會自動清掉右鍵選單的登錄檔機碼;`%APPDATA%\niulai-deleter\` 裡的自訂角色素材會保留。
 
 ## ✨ 功能
 
@@ -111,10 +134,14 @@ UTF-8/UTF-16/GBK 三編碼解碼、三通道檢索 + 全域性 UIA 兜底),但�
 ```bash
 npm install          # 安裝依賴(已配置 npmmirror 映象)
 npm start            # 開發模式執行
-npm run dist         # 打包 NSIS 安裝版 → dist/NiuLaiDeleter-Setup.exe
+npm run dist         # 打包 NSIS 安裝版(x64 + arm64)→ dist/
 ```
 
-分發物只有一個檔案:`dist/NiuLaiDeleter-Setup.exe`。
+分發物是兩個安裝檔:`dist/NiuLaiDeleter-Setup-x64.exe` 與 `dist/NiuLaiDeleter-Setup-arm64.exe`。
+
+> 打包指令必須明確帶架構(`--win --x64 --arm64`)。CLI 的 target 參數會覆蓋
+> `electron-builder.yml` 的 `win.target` 區塊,而未指定架構時會跟著建置主機走 ——
+> 在 Apple Silicon 的 Mac 上打包只會產出 Windows ARM64 版,x64 使用者裝不了。
 
 ## 📁 目錄結構
 
