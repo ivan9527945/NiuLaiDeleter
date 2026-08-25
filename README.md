@@ -25,6 +25,8 @@
 
 ## 📥 下載與安裝(Windows)
 
+**官方網站**:https://niulai-site-production-28c7.up.railway.app
+
 **下載頁**:[Releases](https://github.com/ivan9527945/NiuLaiDeleter/releases/latest)
 
 | 檔案 | 誰該下載 |
