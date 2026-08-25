@@ -189,11 +189,30 @@ tbody tr:nth-child(even){background:#fff}
   animation:sprite 1.875s steps(15) infinite,cross 14s linear infinite}
 @keyframes sprite{to{background-position:-2250px 0}}
 @keyframes cross{from{left:-170px}to{left:100%}}
-.sp{width:150px;height:267px;margin:0 auto var(--unit)}
-.sp--kick{background:url(/kick.png) 0 0/2250px 267px no-repeat;animation:sprite 1.875s steps(15) infinite}
-.sp--leo{background:url(/leo.png) 0 0/2250px 267px no-repeat;animation:sprite 1.875s steps(15) infinite}
-.demos{display:flex;gap:calc(var(--unit)*5);justify-content:center;flex-wrap:wrap;text-align:center}
-.demos small{font-family:var(--font-mono);font-size:12px}
+/* 實機示範舞台：時間軸與 show.js／config.jsonc 完全一致 */
+.demo{position:relative;height:330px;overflow:hidden;background:#008080;
+  border:2px solid;border-color:var(--bevel-in-color);box-shadow:var(--bevel-in-shadow)}
+.demo__ground{position:absolute;left:0;right:0;bottom:0;height:52px;
+  background:var(--bg);border-top:2px solid #fff}
+.demo__file{position:absolute;top:96px;width:56px;text-align:center;
+  font-family:var(--font-mono);font-size:10px;color:#fff;line-height:1.3}
+.demo__file i{display:block;width:34px;height:42px;margin:0 auto 4px;background:#fff;
+  border:2px solid #000;position:relative}
+.demo__file i::after{content:"";position:absolute;top:0;right:0;width:11px;height:11px;
+  background:var(--muted);border-left:2px solid #000;border-bottom:2px solid #000}
+.demo__calf{position:absolute;width:150px;height:267px;bottom:44px;
+  background-repeat:no-repeat;background-size:auto 267px}
+.demo__boom{position:absolute;width:120px;height:160px;display:none;
+  background:url(/boom.png) 0 0/1800px 160px no-repeat}
+.demo__bub{position:absolute;display:none;background:#fff;border:2px solid #000;
+  padding:6px 11px;font-size:13px;font-weight:700;white-space:nowrap;z-index:3}
+.demo__bub::after{content:"";position:absolute;left:18px;bottom:-10px;
+  border:9px solid transparent;border-top-color:#000}
+.demo__hud{display:flex;justify-content:space-between;align-items:center;gap:var(--unit);
+  margin-top:6px;flex-wrap:wrap}
+.demo__phase{font-family:var(--font-mono);font-size:12px;background:#000;color:var(--success);
+  padding:4px 9px;border:2px solid;border-color:var(--bevel-in-color)}
+.btn--sm{padding:6px 15px;font-size:12px}
 
 /* 流程清單 */
 .steps{counter-reset:s;display:grid;gap:var(--unit)}
@@ -244,7 +263,7 @@ footer p{margin-bottom:6px}
   .stage{height:236px}
   .calf{width:112px;height:200px;background-size:1680px 200px;bottom:40px}
   @keyframes sprite{to{background-position:-1680px 0}}
-  .demos{gap:calc(var(--unit)*3)}
+  .demo{height:290px}
 }
 
 /* 尊重減少動態偏好 */
@@ -254,7 +273,7 @@ footer p{margin-bottom:6px}
   .badge{animation:none}
   .marquee__track{animation:none}
   .calf{animation:none;left:24px;background-position:0 0}
-  .sp--kick,.sp--leo{animation:none}
+  .demo__calf{animation:none}
 }
 </style>
 </head>
@@ -308,7 +327,7 @@ footer p{margin-bottom:6px}
     <h2>這 到 底 是 什 麼</h2>
     <p style="max-width:660px;margin-bottom:24px">
       一個 Windows 右鍵選單擴充。你選一個檔案，牠負責把它刪掉。
-      中間會多花大約 13 秒，做一些完全不必要的事。
+      中間會多花大約 9 秒，做一些完全不必要的事。
     </p>
     <div class="grid">
       <div class="win" style="margin:0">
@@ -360,7 +379,7 @@ footer p{margin-bottom:6px}
           <thead><tr><th>項目</th><th>按 Delete 鍵</th><th>召喚牛來</th></tr></thead>
           <tbody>
             <tr><td>刪掉檔案</td><td>可以</td><td class="yes">也可以</td></tr>
-            <tr><td>耗時</td><td>0.2 秒</td><td class="yes">約 13 秒</td></tr>
+            <tr><td>耗時</td><td>0.2 秒</td><td class="yes">約 9 秒</td></tr>
             <tr><td>硬碟空間成本</td><td>0</td><td class="yes">103 MB</td></tr>
             <tr><td>過程中有牛</td><td class="no">沒有</td><td class="yes">有</td></tr>
             <tr><td>牛會不會問你確定嗎</td><td class="no">不會</td><td class="yes">會</td></tr>
@@ -378,29 +397,45 @@ footer p{margin-bottom:6px}
 
 <section>
   <div class="wrap">
-    <h2>13 秒 裡 發 生 了 什 麼</h2>
-    <p style="margin-bottom:20px">全程你只需要按一次「就是它」。其餘時間請安靜欣賞。</p>
-    <div class="grid-2">
-      <div class="steps">
-        <div class="step"><div><b>從螢幕外走進來</b><em>4.5 秒。牠不會跑，也不會瞬移。牠用走的。</em></div></div>
-        <div class="step"><div><b>抬起前蹄指著你的檔案</b><em>順便發出音效，確認自己沒認錯。</em></div></div>
-        <div class="step"><div><b>「媽媽——是這個嗎？」</b><em>氣泡跳出來，附三顆按鈕：就是它／不是，我再挑一個／換一隻。</em></div></div>
-        <div class="step"><div><b>踹</b><em>第 5 幀，爆炸，檔案同時進資源回收筒。</em></div></div>
-        <div class="step"><div><b>叉腰登場</b><em>事情辦完了才登場。牠有自己的節奏。</em></div></div>
-        <div class="step"><div><b>飛走</b><em>2 秒，水平飛出螢幕，視窗自動關閉。留你一個人。</em></div></div>
+    <h2>9 秒 裡 發 生 了 什 麼</h2>
+    <p style="margin-bottom:20px">
+      下面是實機演出的重現，每一段的長度都直接取自 <code>config.jsonc</code>。
+      注意檔案圖示在爆炸的同一刻消失——那不是特效，刪除就是在那一幀發生的。
+    </p>
+    <div class="win">
+      <div class="win__bar">
+        <span>示範 — 摧毀「報告.docx」</span>
+        <span class="win__btns" aria-hidden="true"><i>_</i><i>□</i><i>✕</i></span>
       </div>
-      <div class="win" style="margin:0">
-        <div class="win__bar"><span>預覽動畫</span></div>
-        <div class="win__body">
-          <div class="demos">
-            <div><div class="sp sp--kick" role="img" aria-label="牛踢出前腿的動畫"></div><small>踹的瞬間</small></div>
-            <div><div class="sp sp--leo" role="img" aria-label="牛叉腰登場的動畫"></div><small>叉腰登場</small></div>
-          </div>
+      <div class="win__body gray">
+        <div class="demo" id="demo" role="img"
+             aria-label="示範動畫：牛從左邊走進來、指認檔案、詢問後踹出去，檔案在爆炸的同一刻消失，接著牛叉腰登場並飛走">
+          <div class="demo__ground"></div>
+          <div class="demo__file" id="dFile"><i></i>報告.docx</div>
+          <div class="demo__calf" id="dCalf"></div>
+          <div class="demo__boom" id="dBoom"></div>
+          <div class="demo__bub" id="dBub">媽媽——是這個嗎？</div>
+        </div>
+        <div class="demo__hud">
+          <span class="demo__phase" id="dPhase">00.00s</span>
+          <button class="btn btn--sm" id="dReplay" type="button">重播</button>
         </div>
       </div>
     </div>
+    <div class="grid-2" style="margin-top:calc(var(--unit)*3)">
+      <div class="steps">
+        <div class="step"><div><b>從螢幕外走進來</b><em>2.5 秒。牠不會跑，也不會瞬移。牠用走的。</em></div></div>
+        <div class="step"><div><b>抬起前蹄指著你的檔案</b><em>0.5 秒。順便發出音效，確認自己沒認錯。</em></div></div>
+        <div class="step"><div><b>「媽媽——是這個嗎？」</b><em>等你按。三顆按鈕：就是它／不是，我再挑一個／換一隻。</em></div></div>
+      </div>
+      <div class="steps">
+        <div class="step"><div><b>踹</b><em>1.875 秒。第 5 幀爆炸，檔案同時進資源回收筒。</em></div></div>
+        <div class="step"><div><b>叉腰登場</b><em>1.875 秒。事情辦完了才登場。牠有自己的節奏。</em></div></div>
+        <div class="step"><div><b>飛走</b><em>2 秒。水平飛出螢幕，視窗自動關閉。留你一個人。</em></div></div>
+      </div>
+    </div>
   </div>
-</section>
+  </section>
 
 <hr class="hr-groove">
 
@@ -410,11 +445,11 @@ footer p{margin-bottom:6px}
       <div class="win__bar"><span>本站統計</span></div>
       <div class="win__body gray">
         <div class="counter">
-          <b>000000013</b>
-          <small>SECONDS PER FILE &nbsp;|&nbsp; 6 ANIMATIONS &nbsp;|&nbsp; 15 FRAMES EACH &nbsp;|&nbsp; SINCE 2026</small>
+          <b>000008750</b>
+          <small>MILLISECONDS PER FILE &nbsp;|&nbsp; 6 ANIMATIONS &nbsp;|&nbsp; 15 FRAMES EACH &nbsp;|&nbsp; SINCE 2026</small>
         </div>
         <p style="text-align:center;margin:14px 0 0;font-family:var(--font-mono);font-size:12px">
-          刪一個檔案要 13 秒。這個數字我們沒有要優化的意思。
+          刪一個檔案 8.75 秒。其中 3.6 秒檔案就沒了，剩下 5.1 秒是謝幕。
         </p>
       </div>
     </div>
@@ -521,5 +556,120 @@ footer p{margin-bottom:6px}
   </div>
 </footer>
 
+
+<script>
+/* 示範動畫：時間常數直接對應 config.jsonc 與 show.js 的串接順序。
+   8fps = 125ms/格；踹的第 5 格觸發爆炸，檔案就在那一刻消失。
+   「等你按」那 1.2 秒在真實程式裡是無限等待使用者點擊，這裡給個代表值。 */
+(function () {
+  var stage = document.getElementById('demo');
+  if (!stage) return;
+  var calf  = document.getElementById('dCalf'),
+      boom  = document.getElementById('dBoom'),
+      file  = document.getElementById('dFile'),
+      bub   = document.getElementById('dBub'),
+      phase = document.getElementById('dPhase'),
+      replay= document.getElementById('dReplay');
+
+  var FW = 150, MS = 125, KICK_FRAME = 5;
+  var D = { walk:2500, point:500, dialog:1200, kick:1875, leo:1875, fly:2000, pause:1400 };
+  var t0 = D.walk,            // 走完
+      t1 = t0 + D.point,      // 指認完
+      t2 = t1 + D.dialog,     // 開始踹
+      tB = t2 + KICK_FRAME*MS,// 爆炸＋刪除
+      t3 = t2 + D.kick,       // 踹完
+      t4 = t3 + D.leo,        // 登場完
+      t5 = t4 + D.fly,        // 飛走完
+      LOOP = t5 + D.pause;
+  var BOOM_END = tB + 15*MS;
+
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var startAt = null, rafId = null;
+
+  function sprite(url, frame) {
+    calf.style.backgroundImage = 'url(' + url + ')';
+    calf.style.backgroundPosition = (-frame * FW) + 'px 0';
+  }
+  function fmt(ms) { return (ms / 1000).toFixed(2) + 's'; }
+
+  function render(ms) {
+    var w = stage.clientWidth;
+    var fileX = w - 110;                 // 檔案圖示左緣
+    var cx = fileX + 28;                 // 圖示中心
+    var endX = cx - 32 - FW;             // 角色落點：中心 - target_gap - 角色寬
+    file.style.left = fileX + 'px';
+
+    bub.style.display = 'none';
+    var label;
+
+    if (ms < t0) {                                      // 走進來
+      sprite('/walk.png', Math.floor(ms / MS) % 15);
+      calf.style.left = (-170 + (endX + 170) * (ms / t0)) + 'px';
+      label = '走進來';
+    } else if (ms < t1) {                               // 指認（point_frames 只有 4 格）
+      sprite('/point.png', Math.min(3, Math.floor((ms - t0) / MS)));
+      calf.style.left = endX + 'px';
+      label = '指認檔案';
+    } else if (ms < t2) {                               // 等使用者按確認
+      sprite('/point.png', 3);
+      calf.style.left = endX + 'px';
+      bub.style.display = 'block';
+      bub.style.left = (endX + 16) + 'px';
+      bub.style.top = '30px';
+      label = '等你按「就是它」';
+    } else if (ms < t3) {                               // 踹
+      sprite('/kick.png', Math.min(14, Math.floor((ms - t2) / MS)));
+      calf.style.left = endX + 'px';
+      label = ms >= tB ? '踹 — 檔案已進資源回收筒' : '踹';
+    } else if (ms < t4) {                               // 登場
+      sprite('/leo.png', Math.min(14, Math.floor((ms - t3) / MS)));
+      calf.style.left = endX + 'px';
+      label = '叉腰登場';
+    } else {                                            // 飛走（in-quad）
+      var p = Math.min(1, (ms - t4) / D.fly);
+      sprite('/fly.png', Math.floor((ms - t4) / MS) % 15);
+      calf.style.left = (endX + (w + 220 - endX) * p * p) + 'px';
+      label = '飛走';
+    }
+
+    // 爆炸與刪除：獨立於角色階段，橫跨踹尾與登場
+    if (ms >= tB && ms < BOOM_END) {
+      boom.style.display = 'block';
+      boom.style.left = (cx - 60) + 'px';
+      boom.style.top = '14px';
+      boom.style.backgroundPosition = (-Math.floor((ms - tB) / MS) * 120) + 'px 0';
+    } else {
+      boom.style.display = 'none';
+    }
+    file.style.visibility = ms >= tB ? 'hidden' : 'visible';
+
+    phase.textContent = fmt(Math.min(ms, t5)) + ' — ' + label;
+  }
+
+  function tick(now) {
+    if (startAt === null) startAt = now;
+    var ms = now - startAt;
+    if (ms >= LOOP) { startAt = now; ms = 0; }
+    render(ms);
+    rafId = requestAnimationFrame(tick);
+  }
+
+  function play() {
+    if (rafId) cancelAnimationFrame(rafId);
+    startAt = null;
+    rafId = requestAnimationFrame(tick);
+  }
+
+  replay.addEventListener('click', play);
+
+  if (reduce) {
+    render(t1 + 200);                 // 靜止在「牛指著檔案、氣泡跳出」那一刻
+    phase.textContent = '已暫停 — 按「重播」播放一次';
+  } else {
+    play();
+  }
+  window.addEventListener('resize', function () { if (reduce) render(t1 + 200); });
+})();
+</script>
 </body>
 </html>

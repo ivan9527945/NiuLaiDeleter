@@ -22,13 +22,17 @@ const MIME = {
 
 http.createServer((req, res) => {
   // 只取 pathname，丟掉 query；decode 後再正規化,避免 ../ 逃出 public/
+  // 不用 new URL()：req.url 若是 "//" 會被當成 protocol-relative 而拋錯,
+  // 而 "//" 是合法請求(爬蟲/proxy 會送),不該回 400。
   let rel;
   try {
-    rel = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+    const q = req.url.indexOf('?');
+    rel = decodeURIComponent(q === -1 ? req.url : req.url.slice(0, q));
   } catch {
     res.writeHead(400).end('bad request');
     return;
   }
+  if (!rel.startsWith('/')) rel = '/' + rel;
   if (rel.endsWith('/')) rel += 'index.html';
 
   const file = path.join(ROOT, path.normalize(rel));

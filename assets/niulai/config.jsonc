@@ -39,7 +39,7 @@
   "animation": {
     "fps": 8,                  // 動畫幀率
     "sprite_height": 250,      // 角色顯示高度(像素)
-    "walk_duration_ms": 4500,  // 走路入場時長(毫秒)
+    "walk_duration_ms": 2500,  // 走路入場時長(毫秒)
     "explosion_height": 150,   // 爆炸圖顯示高度(像素)
     "walk_y_offset": 50,       // 走路時角色相對目標點的垂直偏移(像素,正=偏下)
     "target_gap": 30,          // 角色前蹄與目標檔案的水平間距(像素,越小越貼近)
