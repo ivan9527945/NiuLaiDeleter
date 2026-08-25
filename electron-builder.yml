@@ -11,9 +11,15 @@ asarUnpack:          # assets 保持真實檔案,渲染程序 file:// 直接讀;
   - assets/**
   - build/find-file-rect.exe
 win:
-  target: nsis        # 安裝版:啟動快(免每次解壓),解除安裝自動清登錄檔
+  # 必須明確列出架構:不寫的話 electron-builder 會跟著建置主機的架構走,
+  # 在 Apple Silicon 上打包只會產出 Windows ARM64 版,x64 使用者裝不了。
+  target:
+    - target: nsis    # 安裝版:啟動快(免每次解壓),解除安裝自動清登錄檔
+      arch:
+        - x64
+        - arm64
   icon: public/logo.png   # 1024x1024 PNG,electron-builder 自動轉 .ico
-  artifactName: NiuLaiDeleter-Setup.exe
+  artifactName: NiuLaiDeleter-Setup-${arch}.exe
 nsis:
   oneClick: false                    # 精靈式安裝(可改安裝目錄)
   allowToChangeInstallationDirectory: true

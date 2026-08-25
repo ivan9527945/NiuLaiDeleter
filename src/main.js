@@ -49,12 +49,19 @@ function registerContextMenu() {
 
 // ---------- 啟動模式 ----------
 // 從 argv 裡找被召喚的目標:必須是存在的【檔案或資料夾】(排除 exe 自身、命令列開關)
+// 還必須排除【應用程式自己的目錄】:dev 模式下啟動指令是 `electron . <目標>`,
+// 那個 "." 是存在的資料夾,會比真正的目標更早被 find 命中,結果整個專案目錄
+// 被當成召喚目標丟進資源回收筒。打包版的 argv 不含 ".",但這裡一併擋掉才安全。
 const SELF = [process.execPath, process.env.PORTABLE_EXECUTABLE_FILE].filter(Boolean);
 function findTargetFile(argv) {
+  let appPath = null;
+  try { appPath = fs.realpathSync(app.getAppPath()); } catch { /* 尚未 ready 時忽略 */ }
   return argv.find((a) => {
     if (!a || a.startsWith('-') || SELF.includes(a)) return false;
     try {
-      const st = fs.statSync(a);
+      const real = fs.realpathSync(a);
+      if (appPath && real === appPath) return false;   // 應用程式自己的目錄,不是召喚目標
+      const st = fs.statSync(real);
       return st.isFile() || st.isDirectory();
     } catch { return false; }
   });
