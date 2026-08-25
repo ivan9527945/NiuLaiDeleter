@@ -1,13 +1,13 @@
 {
   "name": "niulai-deleter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "牛來摧毀檔案(Electron 版)",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder --win --x64 --arm64"
   },
-  "author": "Strive",
+  "author": "ivan9527945 (https://github.com/ivan9527945)",
   "license": "MIT",
   "devDependencies": {
     "codemirror": "^5.65.21",
