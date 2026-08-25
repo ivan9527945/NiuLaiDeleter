@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NiuLaiDeleter — 你的檔案不配安詳地離開</title>
+<meta name="description" content="右鍵召喚一隻牛，走過來、指認你的檔案、問你確定嗎，然後一腳踹爆。一款完全沒有必要存在的檔案刪除助手。">
+<link rel="icon" href="/favicon.png">
+<meta property="og:title" content="NiuLaiDeleter — 你的檔案不配安詳地離開">
+<meta property="og:description" content="右鍵召喚一隻牛，走過來、指認你的檔案，然後一腳踹爆。">
+<meta property="og:image" content="/logo.png">
+<style>
+/* ============================================================
+   設計 token —— 全部集中在這裡，元件只引用變數不寫死色碼
+   ============================================================ */
+:root{
+  /* 色票：Windows 95 系統色 + 早期網頁純 RGB */
+  --bg:#c0c0c0;  --bg-tile:#b8b8b8;  --fg:#000000;  --muted:#808080;
+  --accent:#0000ff;  --secondary:#ff0000;  --tertiary:#ffff00;
+  --success:#00ff00;  --success-dk:#00aa00;
+  --border-lt:#ffffff;  --border-dk:#808080;  --border-xdk:#404040;  --border-hl:#dfdfdf;
+  --titlebar:#000080;  --titlebar-end:#1084d0;
+  --panel-yellow:#ffffcc;  --row-alt:#e8e8e8;
+  --link:#0000ff;  --link-visited:#800080;  --link-hover:#ff0000;
+
+  /* 立體斜角 —— 本設計的簽名式元素，抽成變數避免每個元件重打一次 */
+  --bevel-out-color: var(--border-lt) var(--border-dk) var(--border-dk) var(--border-lt);
+  --bevel-out-shadow: inset -1px -1px 0 var(--border-xdk), inset 1px 1px 0 var(--border-hl);
+  --bevel-out-deep: inset -2px -2px 0 #808080, inset 2px 2px 0 #fff,
+                    inset -4px -4px 0 #404040, inset 4px 4px 0 #dfdfdf;
+  --bevel-in-color: var(--border-dk) var(--border-lt) var(--border-lt) var(--border-dk);
+  --bevel-in-shadow: inset 1px 1px 0 var(--border-xdk), inset -1px -1px 0 var(--border-hl);
+
+  /* 字體：西文用 90 年代系統字，後面接 CJK 才不會讓中文掉回細體 */
+  --font-body:"MS Sans Serif","Segoe UI",Tahoma,Geneva,Verdana,"PingFang TC","Microsoft JhengHei",sans-serif;
+  --font-head:"Arial Black",Impact,Haettenschweiler,"PingFang TC","Microsoft JhengHei",sans-serif;
+  --font-mono:"Courier New",Courier,monospace;
+
+  --unit:8px;                 /* 間距基數 */
+  --maxw:1024px;              /* 對應 800x600 時代的內容寬度 */
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+::selection{background:var(--titlebar);color:#fff}
+
+body{
+  margin:0; color:var(--fg); font-family:var(--font-body);
+  font-size:15px; line-height:1.6;
+  /* 背景不能是平的：4px 斜紋磁磚 */
+  background-color:var(--bg);
+  background-image:
+    linear-gradient(45deg,var(--bg-tile) 25%,transparent 25%),
+    linear-gradient(-45deg,var(--bg-tile) 25%,transparent 25%),
+    linear-gradient(45deg,transparent 75%,var(--bg-tile) 75%),
+    linear-gradient(-45deg,transparent 75%,var(--bg-tile) 75%);
+  background-size:4px 4px;
+  background-position:0 0,0 2px,2px -2px,-2px 0;
+}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 calc(var(--unit)*2)}
+section{padding:calc(var(--unit)*8) 0}
+
+h1,h2,h3{font-family:var(--font-head);font-weight:900;line-height:1.2;margin:0}
+h1{font-size:clamp(34px,6.6vw,66px);text-shadow:2px 2px 0 var(--muted)}
+h2{font-size:clamp(26px,4.2vw,42px);margin-bottom:var(--unit)}
+h3{font-size:19px}
+p{margin:0 0 var(--unit)}
+
+a{color:var(--link);text-decoration:underline;transition:none}
+a:visited{color:var(--link-visited)}
+a:hover,a:active{color:var(--link-hover)}
+:focus-visible{outline:2px dotted #000;outline-offset:2px}
+
+/* ============================================================
+   基礎元件
+   ============================================================ */
+.bevel-out{border:2px solid;border-color:var(--bevel-out-color);box-shadow:var(--bevel-out-shadow)}
+.bevel-in{border:2px solid;border-color:var(--bevel-in-color);box-shadow:var(--bevel-in-shadow)}
+
+/* 視窗卡片：外框凸起 + 標題列漸層 + 內容區凹陷 */
+.win{background:var(--bg);border:2px solid;border-color:var(--bevel-out-color);
+     box-shadow:var(--bevel-out-deep);padding:3px;margin-bottom:calc(var(--unit)*2)}
+.win__bar{background:linear-gradient(to right,var(--titlebar),var(--titlebar-end));
+     color:#fff;font-weight:700;font-size:13px;padding:4px 8px;
+     display:flex;align-items:center;justify-content:space-between;gap:8px}
+.win__bar span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.win__btns{display:flex;gap:2px;flex:none}
+.win__btns i{width:16px;height:14px;background:var(--bg);display:block;
+     border:1px solid;border-color:var(--bevel-out-color);font-style:normal;
+     font-size:9px;line-height:12px;text-align:center;color:#000;font-weight:700}
+.win__body{background:#fff;border:2px solid;border-color:var(--bevel-in-color);
+     box-shadow:var(--bevel-in-shadow);padding:calc(var(--unit)*2);margin-top:3px}
+.win__body.yellow{background:var(--panel-yellow)}
+.win__body.gray{background:var(--bg)}
+
+/* 按鈕 */
+.btn{display:inline-block;font-family:var(--font-body);font-weight:700;font-size:14px;
+  letter-spacing:.06em;text-transform:uppercase;text-decoration:none;text-align:center;
+  padding:10px 22px;cursor:pointer;transition:none;
+  background:var(--bg);color:#000;
+  border:2px solid;border-color:var(--bevel-out-color);box-shadow:var(--bevel-out-shadow)}
+.btn:visited{color:#000}
+.btn:hover{background:#d0d0d0;color:#000}
+.btn:active{border-color:var(--bevel-in-color);box-shadow:var(--bevel-in-shadow);
+  transform:translate(1px,1px)}
+.btn--accent{background:var(--accent);color:#fff;border-color:#5555ff #000080 #000080 #5555ff}
+.btn--accent:visited,.btn--accent:hover{color:#fff}
+.btn--accent:hover{background:#2222ff}
+.btn--danger{background:var(--secondary);color:#fff;border-color:#ff5555 #800000 #800000 #ff5555}
+.btn--danger:visited,.btn--danger:hover{color:#fff}
+.btn--danger:hover{background:#ff2222}
+.btn--success{background:var(--success-dk);color:#fff;border-color:#00ff00 #006600 #006600 #00ff00}
+.btn--success:visited,.btn--success:hover{color:#fff}
+.btn--success:hover{background:#00c400}
+
+/* 溝槽分隔線 */
+.hr-groove{border:none;height:4px;margin:0;
+  background:linear-gradient(to bottom,var(--muted) 0 50%,#fff 50% 100%)}
+
+/* 施工警示斜紋 */
+.stripes{background:repeating-linear-gradient(45deg,
+  var(--tertiary),var(--tertiary) 10px,#000 10px,#000 20px)}
+
+/* 跑馬燈（純 CSS，內容複製兩份無縫接軌） */
+.marquee{overflow:hidden;background:#000;border-top:2px solid #fff;border-bottom:2px solid var(--muted)}
+.marquee__track{display:inline-flex;white-space:nowrap;
+  animation:scroll 28s linear infinite;will-change:transform}
+.marquee:hover .marquee__track{animation-play-state:paused}
+.marquee b{font-family:var(--font-mono);font-size:14px;font-weight:700;padding:7px 26px}
+@keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* 彩虹跑色標題 */
+.rainbow{animation:rainbow 4s linear infinite}
+@keyframes rainbow{
+  0%{color:#ff0000}17%{color:#ff8000}33%{color:#ffff00}
+  50%{color:#00ff00}67%{color:#0080ff}83%{color:#8000ff}100%{color:#ff0000}}
+
+/* NEW! 徽章 */
+.badge{display:inline-block;background:var(--secondary);color:#fff;font-family:var(--font-mono);
+  font-weight:700;font-size:12px;padding:3px 10px;border:2px solid;
+  border-color:#ff5555 #800000 #800000 #ff5555;animation:pulse-glow 1.5s ease-in-out infinite}
+@keyframes pulse-glow{
+  0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,0,0,.7)}
+  50%{transform:scale(1.05);box-shadow:0 0 10px 2px rgba(255,0,0,.5)}}
+.badge--yellow{background:var(--tertiary);color:#000;border-color:#ffff88 #808000 #808000 #ffff88}
+
+/* 計數器 */
+.counter{background:#000;padding:calc(var(--unit)*2);text-align:center;
+  border:2px solid;border-color:var(--bevel-in-color);box-shadow:var(--bevel-in-shadow)}
+.counter b{font-family:var(--font-mono);color:var(--success);font-size:clamp(18px,3.4vw,30px);
+  letter-spacing:.14em;display:block}
+.counter small{font-family:var(--font-mono);color:var(--success);font-size:12px;opacity:.85}
+
+/* 表格 */
+table{width:100%;border-collapse:collapse;font-size:14px;background:#fff}
+caption{caption-side:top;text-align:left;font-family:var(--font-mono);font-size:12px;
+  color:#000;padding-bottom:6px}
+th,td{padding:9px 12px;text-align:left;border-right:2px solid var(--muted);
+  border-bottom:2px solid var(--muted)}
+th:last-child,td:last-child{border-right:none}
+th{background:var(--titlebar);color:#fff;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+tbody tr:nth-child(odd){background:var(--row-alt)}
+tbody tr:nth-child(even){background:#fff}
+.yes{color:#006600;font-weight:700}
+.no{color:var(--muted)}
+
+/* 版面 */
+.grid{display:grid;gap:calc(var(--unit)*2);grid-template-columns:repeat(auto-fit,minmax(272px,1fr))}
+.grid-2{display:grid;gap:calc(var(--unit)*2);grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.ico{width:44px;height:44px;display:grid;place-items:center;margin-bottom:var(--unit);
+  border:2px solid;border-color:var(--bevel-out-color);box-shadow:var(--bevel-out-shadow)}
+.ico svg{stroke:#fff;stroke-width:2;fill:none}
+.ico--navy{background:var(--titlebar)}.ico--red{background:var(--secondary)}
+.ico--green{background:var(--success-dk)}
+
+/* Hero */
+.hero{padding:calc(var(--unit)*5) 0 0}
+.hero__lead{font-size:clamp(15px,2.1vw,18px);max-width:640px}
+.cta{display:flex;gap:var(--unit);flex-wrap:wrap;align-items:center;margin:calc(var(--unit)*2) 0 var(--unit)}
+.meta{font-family:var(--font-mono);font-size:12px;color:#000}
+
+/* 走路舞台：15 格 spritesheet，8fps = 1.875s 一圈 */
+.stage{position:relative;height:290px;overflow:hidden;background:#fff;
+  border:2px solid;border-color:var(--bevel-in-color);box-shadow:var(--bevel-in-shadow);margin-top:3px}
+.stage__ground{position:absolute;left:0;right:0;bottom:0;height:56px;background:#008080;
+  border-top:2px solid #004040}
+.calf{position:absolute;bottom:44px;width:150px;height:267px;
+  background:url(/walk.png) 0 0/2250px 267px no-repeat;
+  animation:sprite 1.875s steps(15) infinite,cross 14s linear infinite}
+@keyframes sprite{to{background-position:-2250px 0}}
+@keyframes cross{from{left:-170px}to{left:100%}}
+.sp{width:150px;height:267px;margin:0 auto var(--unit)}
+.sp--kick{background:url(/kick.png) 0 0/2250px 267px no-repeat;animation:sprite 1.875s steps(15) infinite}
+.sp--leo{background:url(/leo.png) 0 0/2250px 267px no-repeat;animation:sprite 1.875s steps(15) infinite}
+.demos{display:flex;gap:calc(var(--unit)*5);justify-content:center;flex-wrap:wrap;text-align:center}
+.demos small{font-family:var(--font-mono);font-size:12px}
+
+/* 流程清單 */
+.steps{counter-reset:s;display:grid;gap:var(--unit)}
+.step{counter-increment:s;display:flex;gap:var(--unit);align-items:flex-start;
+  background:#fff;padding:12px 14px;border:2px solid;border-color:var(--bevel-in-color)}
+.step:nth-child(even){background:var(--row-alt)}
+.step::before{content:counter(s);flex:none;width:26px;height:26px;background:var(--titlebar);
+  color:#fff;font-family:var(--font-mono);font-weight:700;font-size:13px;
+  display:grid;place-items:center}
+.step b{display:block}
+.step em{font-style:normal;color:#333;font-size:14px}
+
+/* 色塊裝飾 */
+.swatches{display:flex;gap:var(--unit);flex-wrap:wrap;justify-content:center}
+.swatches i{width:46px;height:46px;display:block;border:2px solid;
+  border-color:var(--bevel-out-color);box-shadow:var(--bevel-out-shadow)}
+
+/* 評價 */
+.quote{background:var(--panel-yellow);padding:calc(var(--unit)*2);
+  border:2px solid;border-color:var(--bevel-in-color);box-shadow:var(--bevel-in-shadow)}
+.quote p{font-size:15px}
+.quote cite{font-style:normal;font-family:var(--font-mono);font-size:12px;color:#000080}
+.disclaimer{font-family:var(--font-mono);font-size:12px;margin-top:calc(var(--unit)*2)}
+
+/* FAQ */
+details{background:var(--bg);border:2px solid;border-color:var(--bevel-out-color);
+  box-shadow:var(--bevel-out-shadow);padding:12px 16px;margin-bottom:var(--unit)}
+summary{cursor:pointer;font-weight:700;font-size:15px;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"[+] ";font-family:var(--font-mono);color:var(--titlebar)}
+details[open] summary::before{content:"[-] "}
+details p{margin:10px 0 0;font-size:14px}
+code{font-family:var(--font-mono);background:#fff;padding:1px 5px;
+  border:1px solid var(--muted);font-size:13px}
+
+/* 下載欄位 */
+.dl{border:2px solid;border-color:var(--bevel-in-color);background:#fff;padding:calc(var(--unit)*2)}
+.dl h3{font-size:16px;margin-bottom:4px}
+.dl code{display:inline-block;margin:4px 0 6px;word-break:break-all}
+.warn{background:var(--panel-yellow);border:2px solid #000;padding:calc(var(--unit)*2);
+  margin-top:calc(var(--unit)*2);font-size:14px}
+.warn b{color:#800000}
+
+footer{background:var(--bg);border-top:4px solid var(--muted);padding:calc(var(--unit)*5) 0;font-size:13px}
+footer p{margin-bottom:6px}
+
+@media(max-width:640px){
+  .stage{height:236px}
+  .calf{width:112px;height:200px;background-size:1680px 200px;bottom:40px}
+  @keyframes sprite{to{background-position:-1680px 0}}
+  .demos{gap:calc(var(--unit)*3)}
+}
+
+/* 尊重減少動態偏好 */
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .rainbow{animation:none;color:#ff0000}
+  .badge{animation:none}
+  .marquee__track{animation:none}
+  .calf{animation:none;left:24px;background-position:0 0}
+  .sp--kick,.sp--leo{animation:none}
+}
+</style>
+</head>
+<body>
+
+<!-- 跑馬燈：裝飾性質，內容在下方都有靜態版本 -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee__track">
+    <b style="color:#ffff00">★ 歡迎光臨 ★</b><b style="color:#00ff00">本站最佳瀏覽解析度 800×600</b>
+    <b style="color:#ff0000">刪除鍵已經過時了</b><b style="color:#00ffff">現在流行召喚牛</b>
+    <b style="color:#ff00ff">免費下載 ★ 完全沒有必要</b>
+    <b style="color:#ffff00">★ 歡迎光臨 ★</b><b style="color:#00ff00">本站最佳瀏覽解析度 800×600</b>
+    <b style="color:#ff0000">刪除鍵已經過時了</b><b style="color:#00ffff">現在流行召喚牛</b>
+    <b style="color:#ff00ff">免費下載 ★ 完全沒有必要</b>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="win">
+      <div class="win__bar">
+        <span>NiuLaiDeleter.exe — 檔案摧毀程式</span>
+        <span class="win__btns" aria-hidden="true"><i>_</i><i>□</i><i>✕</i></span>
+      </div>
+      <div class="win__body gray">
+        <p><span class="badge">NEW!</span> <span class="badge badge--yellow">v1.0.0</span></p>
+        <h1>你的檔案<br><span class="rainbow">不配安詳地離開</span></h1>
+        <p class="hero__lead" style="margin-top:12px">
+          按 Delete 太文明了。NiuLaiDeleter 讓你右鍵召喚一隻牛，
+          牠會慢慢走過來、抬起前蹄指認你的檔案、開口問你「媽媽——是這個嗎？」，
+          然後一腳把它踹進資源回收筒。
+        </p>
+        <div class="cta">
+          <a class="btn btn--accent" href="https://github.com/ivan9527945/NiuLaiDeleter/releases/latest">立即下載</a>
+          <a class="btn" href="https://github.com/ivan9527945/NiuLaiDeleter">看原始碼</a>
+        </div>
+        <p class="meta">Windows 95/98/XP/…/11 相容 &nbsp;|&nbsp; 約 103MB &nbsp;|&nbsp; 為了刪一個檔案</p>
+      </div>
+      <div class="stage">
+        <div class="stage__ground"></div>
+        <div class="calf" role="img" aria-label="一隻牛從左邊走到右邊"></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<hr class="hr-groove">
+
+<section>
+  <div class="wrap">
+    <h2>這 到 底 是 什 麼</h2>
+    <p style="max-width:660px;margin-bottom:24px">
+      一個 Windows 右鍵選單擴充。你選一個檔案，牠負責把它刪掉。
+      中間會多花大約 13 秒，做一些完全不必要的事。
+    </p>
+    <div class="grid">
+      <div class="win" style="margin:0">
+        <div class="win__bar"><span>功能 1</span></div>
+        <div class="win__body">
+          <div class="ico ico--navy" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24">
+            <circle cx="12" cy="12" r="8"/><path d="M12 1v6M12 17v6M1 12h6M17 12h6"/></svg></div>
+          <h3>牠會自己找到檔案</h3>
+          <p>程式會去讀檔案總管的清單，算出你那個檔案圖示在螢幕上的實際座標。
+             不是抓滑鼠位置——因為你右鍵的時候游標早就跑到選單上了。這部分意外地認真。</p>
+        </div>
+      </div>
+      <div class="win" style="margin:0">
+        <div class="win__bar"><span>功能 2</span></div>
+        <div class="win__body">
+          <div class="ico ico--red" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24">
+            <path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></div>
+          <h3>牠真的會踹</h3>
+          <p>踢腿動畫的第 5 幀觸發爆炸，同一刻檔案進資源回收筒。
+             時間點是對齊的，不是先刪再演給你看。</p>
+        </div>
+      </div>
+      <div class="win" style="margin:0">
+        <div class="win__bar"><span>功能 3</span></div>
+        <div class="win__body">
+          <div class="ico ico--green" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24">
+            <path d="M12 3a9 9 0 1 0 0 18h3a3 3 0 0 0 0-6h-1a2 2 0 0 1 0-4h2a5 5 0 0 0-4-8z"/>
+            <circle cx="8" cy="10" r="1.2"/><circle cx="12" cy="7.5" r="1.2"/></svg></div>
+          <h3>你可以換一隻</h3>
+          <p>一個資料夾 = 一隻角色。丟六張 5×3 的 spritesheet 進去就多一隻。
+             懶的話只寫一個設定檔調色，就能生出一隻同款不同色的。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="hr-groove">
+
+<section>
+  <div class="wrap">
+    <h2>跟 按 DELETE 比 起 來</h2>
+    <p style="margin-bottom:20px">我們做了一份客觀的比較。</p>
+    <div class="win">
+      <div class="win__bar"><span>比較表.xls</span></div>
+      <div class="win__body" style="padding:0">
+        <table>
+          <caption>資料來源：我們自己</caption>
+          <thead><tr><th>項目</th><th>按 Delete 鍵</th><th>召喚牛來</th></tr></thead>
+          <tbody>
+            <tr><td>刪掉檔案</td><td>可以</td><td class="yes">也可以</td></tr>
+            <tr><td>耗時</td><td>0.2 秒</td><td class="yes">約 13 秒</td></tr>
+            <tr><td>硬碟空間成本</td><td>0</td><td class="yes">103 MB</td></tr>
+            <tr><td>過程中有牛</td><td class="no">沒有</td><td class="yes">有</td></tr>
+            <tr><td>牛會不會問你確定嗎</td><td class="no">不會</td><td class="yes">會</td></tr>
+            <tr><td>會不會爆炸</td><td class="no">不會</td><td class="yes">會</td></tr>
+            <tr><td>刪完有沒有人登場</td><td class="no">沒有</td><td class="yes">有，而且會叉腰</td></tr>
+            <tr><td>有沒有必要</td><td>有</td><td class="no">完全沒有</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="hr-groove">
+
+<section>
+  <div class="wrap">
+    <h2>13 秒 裡 發 生 了 什 麼</h2>
+    <p style="margin-bottom:20px">全程你只需要按一次「就是它」。其餘時間請安靜欣賞。</p>
+    <div class="grid-2">
+      <div class="steps">
+        <div class="step"><div><b>從螢幕外走進來</b><em>4.5 秒。牠不會跑，也不會瞬移。牠用走的。</em></div></div>
+        <div class="step"><div><b>抬起前蹄指著你的檔案</b><em>順便發出音效，確認自己沒認錯。</em></div></div>
+        <div class="step"><div><b>「媽媽——是這個嗎？」</b><em>氣泡跳出來，附三顆按鈕：就是它／不是，我再挑一個／換一隻。</em></div></div>
+        <div class="step"><div><b>踹</b><em>第 5 幀，爆炸，檔案同時進資源回收筒。</em></div></div>
+        <div class="step"><div><b>叉腰登場</b><em>事情辦完了才登場。牠有自己的節奏。</em></div></div>
+        <div class="step"><div><b>飛走</b><em>2 秒，水平飛出螢幕，視窗自動關閉。留你一個人。</em></div></div>
+      </div>
+      <div class="win" style="margin:0">
+        <div class="win__bar"><span>預覽動畫</span></div>
+        <div class="win__body">
+          <div class="demos">
+            <div><div class="sp sp--kick" role="img" aria-label="牛踢出前腿的動畫"></div><small>踹的瞬間</small></div>
+            <div><div class="sp sp--leo" role="img" aria-label="牛叉腰登場的動畫"></div><small>叉腰登場</small></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="hr-groove">
+
+<section>
+  <div class="wrap">
+    <div class="win">
+      <div class="win__bar"><span>本站統計</span></div>
+      <div class="win__body gray">
+        <div class="counter">
+          <b>000000013</b>
+          <small>SECONDS PER FILE &nbsp;|&nbsp; 6 ANIMATIONS &nbsp;|&nbsp; 15 FRAMES EACH &nbsp;|&nbsp; SINCE 2026</small>
+        </div>
+        <p style="text-align:center;margin:14px 0 0;font-family:var(--font-mono);font-size:12px">
+          刪一個檔案要 13 秒。這個數字我們沒有要優化的意思。
+        </p>
+      </div>
+    </div>
+    <div class="swatches" aria-hidden="true" style="margin-top:26px">
+      <i style="background:#ff0000"></i><i style="background:#ff8000"></i>
+      <i style="background:#ffff00"></i><i style="background:#00ff00"></i>
+      <i style="background:#00ffff"></i><i style="background:#0000ff"></i>
+      <i style="background:#8000ff"></i><i style="background:#ff00ff"></i>
+    </div>
+  </div>
+</section>
+
+<hr class="hr-groove">
+
+<section>
+  <div class="wrap">
+    <h2>使 用 者 好 評</h2>
+    <p style="margin-bottom:20px">我們訪問了幾位直接受影響的當事人。</p>
+    <div class="grid">
+      <div class="quote"><p>「我不曉得為什麼被踹，但牠有先問我。這比大部分人有禮貌。」</p>
+        <cite>—— 一個叫「新增資料夾 (3)」的資料夾</cite></div>
+      <div class="quote"><p>「以前東西都是自己掉進來的。現在是被踹進來的。我沒有意見，只是想說一下。」</p>
+        <cite>—— 資源回收筒</cite></div>
+      <div class="quote"><p>「103MB。為了刪一個 4KB 的檔案。我還在消化這件事。」</p>
+        <cite>—— 一顆 512GB SSD</cite></div>
+      <div class="quote"><p>「牠從螢幕左邊走進來走了四秒半。我可以在那四秒半內完成同樣的工作。」</p>
+        <cite>—— Delete 鍵</cite></div>
+    </div>
+    <p class="disclaimer">※ 以上評價由非人類物件提供，並非真實使用者意見，純屬虛構。</p>
+  </div>
+</section>
+
+<div class="stripes" style="height:20px" aria-hidden="true"></div>
+
+<section class="stripes" id="download" style="padding:calc(var(--unit)*4) 0">
+  <div class="wrap">
+    <div class="win" style="margin:0">
+      <div class="win__bar"><span>下載 — 請選擇你的處理器架構</span></div>
+      <div class="win__body gray">
+        <h2 style="margin-bottom:6px">下 載</h2>
+        <p style="margin-bottom:18px">Windows 專用。macOS 和 Linux 使用者請繼續用你們文明的方式刪檔案。</p>
+        <div class="grid-2">
+          <div class="dl">
+            <h3>一般 Windows PC</h3>
+            <code>NiuLaiDeleter-Setup-x64.exe</code>
+            <p style="margin:0;font-size:14px">Intel／AMD 處理器。<b>絕大多數人選這個。</b></p>
+          </div>
+          <div class="dl">
+            <h3>Windows on ARM</h3>
+            <code>NiuLaiDeleter-Setup-arm64.exe</code>
+            <p style="margin:0;font-size:14px">Snapdragon X、Surface Pro 11 之類的。</p>
+          </div>
+        </div>
+        <div class="cta">
+          <a class="btn btn--success" href="https://github.com/ivan9527945/NiuLaiDeleter/releases/latest">前往下載頁</a>
+        </div>
+        <div class="warn">
+          <p><b>裝的時候會被 Windows 攔一次。</b>
+             安裝檔沒有買數位簽章，所以會跳出藍色的「Windows 已保護您的電腦」，
+             而且預設只給你一顆「不要執行」。請點左下角那個很不明顯的
+             <b>「其他資訊」</b>，再點 <b>「仍要執行」</b>。</p>
+          <p style="margin:0"><b>裝完要先自己打開一次。</b>
+             右鍵選單是程式啟動時才寫進登錄檔的，沒開過就不會有右鍵選單。
+             開啟後在角色視窗選一次角色，右鍵選單的文字才會定下來。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="stripes" style="height:20px" aria-hidden="true"></div>
+
+<section>
+  <div class="wrap">
+    <h2>常 見 問 題</h2>
+    <div style="margin-top:20px">
+      <details><summary>檔案是真的被刪掉嗎？還是只是演戲？</summary>
+        <p>真的刪。用的是系統的資源回收筒 API，跟你按 Delete 是同一個去處，所以救得回來。
+           爆炸那一幀跟刪除是同時觸發的。</p></details>
+      <details><summary>需要系統管理員權限嗎？</summary>
+        <p>不用。是每使用者安裝，右鍵選單只寫進 <code>HKCU</code>。解除安裝時會自己清乾淨。</p></details>
+      <details><summary>牛指錯地方怎麼辦？</summary>
+        <p>會發生。多螢幕不同縮放比例、系統地區設定改過、或裝了桌面整理軟體接管圖示，
+           都可能讓定位失準。定位失敗時程式不會亂猜，會自動切成十字準星讓你手動點。</p></details>
+      <details><summary>可以換成別的動物嗎？</summary>
+        <p>可以。一個資料夾 = 一隻角色，準備六張 5 列 × 3 行、共 15 格的 spritesheet
+           （走路／指點／踢踹／爆炸／登場／飛離）丟進素材目錄就行。
+           詳細規格看 repo 裡的自定義角色操作手冊。</p></details>
+      <details><summary>為什麼是牛？</summary>
+        <p>這個問題我們也想了很久。</p></details>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><b>NiuLaiDeleter</b> · MIT 授權 ·
+      <a href="https://github.com/ivan9527945/NiuLaiDeleter">GitHub</a> ·
+      <a href="https://github.com/ivan9527945/NiuLaiDeleter/releases/latest">下載</a></p>
+    <p>角色素材為程式化繪製的同人二創，與《牛來》片方無關，僅供娛樂。</p>
+    <p>本軟體會刪除你指定的檔案。請確認你指的是你真的想刪的那個。</p>
+    <p style="font-family:var(--font-mono);font-size:12px;color:#000;margin-top:14px">
+      Best viewed in 800×600 · Netscape Navigator 4.0 或以上</p>
+  </div>
+</footer>
+
+</body>
+</html>
